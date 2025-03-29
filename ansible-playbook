@@ -4,22 +4,18 @@
   vars:
     github_repo_url: "https://github.com/seyoon12/all-terraform-aws-eks-cicd.git"
     github_username: "seyoon12"
-    github_token: "{{ lookup('pipe', 'terraform output -raw github_oauth_token') }}"
-    ecr_registry: "535597585675.dkr.ecr.ap-northeast-2.amazonaws.com"
+    github_token: "{{ lookup('pipe', 'terraform output -raw -state=/terraform/stacks/codepipeline/terraform.tfstate github_oauth_token') }}"
+    ecr_registry: # 개인정보
     ecr_repo: "app-ecr"
 
   tasks:
-    - name: Install git
+    - name: Install git using yum directly
       become: true
-      apt:
-        name: git
-        state: present
-        update_cache: true
+      shell: apt install -y git
 
     - name: Install Helm
+      shell: curl -sSL https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
       become: true
-      shell: |
-        curl -sSL https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
 
     - name: Add ArgoCD Helm repo
       command: helm repo add argo https://argoproj.github.io/argo-helm
@@ -28,21 +24,6 @@
     - name: Update Helm repo
       command: helm repo update
       changed_when: false
-
-    - name: Create argocd namespace
-      command: kubectl create ns argocd
-      args:
-        creates: /tmp/argocd-ns-created
-      changed_when: false
-      failed_when: false
-
-    - name: Create GitHub secret for ArgoCD access
-      become: true
-      command: >
-        kubectl -n argocd create secret generic github-secret
-        --from-literal=username={{ github_username }}
-        --from-literal=password={{ github_token }}
-      ignore_errors: true
 
     - name: Get ECR login password
       shell: aws ecr get-login-password --region ap-northeast-2
@@ -54,7 +35,7 @@
         --docker-server={{ ecr_registry }}
         --docker-username=AWS
         --docker-password={{ ecr_password.stdout }}
-        --docker-email=dummy@example.com
+        --docker-email=example@example.com
         --dry-run=client -o yaml | kubectl apply -f -
       ignore_errors: true
 
@@ -84,7 +65,7 @@
 
     - name: Update container image in deployment.yaml with sed
       shell: |
-        sed -i 's|^\(\s*image:\s*\).*|\1{{ ecr_image }}|' ./repo/manifests/deployment.yaml
+        sed -i 's|^\(\s*image:\s*\).*|\1{{ ecr_image }}|' ./repo/manifests/example-deployment.yaml
       args:
         executable: /bin/bash
 
@@ -93,12 +74,27 @@
         git config --global --add safe.directory /home/ubuntu/repo
         git config user.name "seyoon12"
         git config user.email "wntpqhd1326@gmail.com"
-        git add manifests/deployment.yaml || true
-        git diff --cached --quiet || git commit -m "Update deployment.yaml from Ansible"
-        git remote set-url origin https://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@github.com/seyoon12/all-terraform-aws-eks-cicd.git
+        git add manifests/example-deployment.yaml || true
+        git diff --cached --quiet || git commit -m "Update example-deployment.yaml from local"
+        git remote set-url origin https://{{ github_token }}@github.com/seyoon12/all-terraform-aws-eks-cicd.git
         git push origin main
       args:
         chdir: ./repo
+
+    - name: Create argocd namespace
+      command: kubectl create ns argocd
+      args:
+        creates: /tmp/argocd-ns-created
+      changed_when: false
+      failed_when: false
+
+    - name: Create GitHub secret for ArgoCD access
+      become: true
+      command: >
+        kubectl -n argocd create secret generic github-secret
+        --from-literal=username={{ github_username }}
+        --from-literal=password={{ github_token }}
+      ignore_errors: true
 
     - name: Write values.yaml for ArgoCD
       copy:
@@ -115,69 +111,14 @@
                 name: github-app
                 type: git
                 url: {{ github_repo_url }}
-                usernameSecret: github-secret:seyoon12
-                passwordSecret: github-secret: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
+                usernameSecret: {{ github_username }}
+                passwordSecret: {{ github_token }}
 
-          applications:
-            - name: my-app
-              namespace: argocd
-              project: default
-              source:
-                repoURL: {{ github_repo_url }}
-                targetRevision: HEAD
-                path: manifests
-              destination:
-                server: https://kubernetes.default.svc
-                namespace: default
-              syncPolicy:
-                automated:
-                  prune: true
-                  selfHeal: true
+          secret:
+            argocdServerAdminPassword: $2a$12$5lLjTzJZ6akUwTPx1FUzFOF/71Okv7Yy2z4S/71sZTezpN2ZMG7De
+            # argocd bcrypt
 
     - name: Install ArgoCD with values.yaml
       command: >
         helm upgrade --install argocd argo/argo-cd
         -n argocd -f ./argocd-values.yaml
-
-    - name: Add argo-ecr-updater Helm repo
-      command: helm repo add argo-ecr-updater https://oci.ghcr.io/argoproj/argo-ecr-updater
-      changed_when: false
-
-    - name: Update Helm repos
-      command: helm repo update
-      changed_when: false
-
-    - name: Write values.yaml for argo-ecr-updater
-      copy:
-        dest: ./ecr-updater-values.yaml
-        content: |
-          credentials:
-            - registry: {{ ecr_registry }}
-              username: AWS
-              passwordFromEnv: AWS_ECR_PASSWORD
-
-          env:
-            - name: AWS_REGION
-              value: ap-northeast-2
-            - name: AWS_ECR_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: ecr-creds
-                  key: .dockerconfigjson
-
-          image:
-            repository: ghcr.io/argoproj/argo-ecr-updater
-            tag: latest
-
-          config:
-            logLevel: info
-            interval: 1m
-            namespace: argocd
-            applicationSelector:
-              matchLabels:
-                ecr-sync: "true"
-
-    - name: Install argo-ecr-updater with values.yaml
-      command: >
-        helm upgrade --install argo-ecr-updater argo-ecr-updater/argo-ecr-updater
-        -n argocd -f ./ecr-updater-values.yaml
