@@ -20,11 +20,6 @@ module "keypair" {
   source = "../../modules/keyPair"
 }
 
-module "sg" {
-  source = "../../modules/sg"
-  vpc_id = data.terraform_remote_state.eks_cluster.outputs.vpc_id
-}
-
 data "aws_eks_cluster" "selected" {
   name = "kubernetes"
 }
@@ -36,7 +31,7 @@ data "aws_eks_cluster_auth" "selected" {
 module "eks_self_managed_node_group" {
   source = "../../modules/eks-selfmanaged-node"
   key_name               = module.keypair.k8s_keyname
-  security_group_ids     = [module.sg.eks-selfmanaged-node_sg_group_ids]
+  security_group_ids    = [data.terraform_remote_state.eks_cluster.outputs.eks_selfmanaged_node_sg_group_ids]
   eks_cluster_endpoint   = data.aws_eks_cluster.selected.endpoint
   eks_cluster_ca         = data.aws_eks_cluster.selected.certificate_authority[0].data
   eks_cluster_token      = data.aws_eks_cluster_auth.selected.token
