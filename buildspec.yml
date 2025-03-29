@@ -1,0 +1,48 @@
+version: 0.2
+
+phases:
+  pre_build:
+    commands:
+      - aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $REPOSITORY_URI    
+      - VERSION=$(cat version.txt)
+      - IMAGE_TAG=$VERSION
+      
+  build:
+    commands:
+      - docker build --no-cache -t $REPOSITORY_URI:$IMAGE_TAG .
+
+      - git clone https://$GITHUB_USERNAME:$GITHUB_TOKEN@github.com/seyoon12/all-terraform-aws-eks-cicd.git
+      - cd all-terraform-aws-eks-cicd
+      - export BRANCH=${CODEBUILD_WEBHOOK_HEAD_REF:-main}
+      - git checkout $BRANCH
+      - echo Pushing Docker image...
+      - docker push $REPOSITORY_URI:$IMAGE_TAG
+      - echo "Updating version.txt..."
+      - |
+        NEXT_VERSION=$(awk -F. '{
+          major=$1; minor=$2;
+          if (minor+1 == 10) {
+            major += 1;
+            minor = 0;
+          } else {
+            minor += 1;
+          }
+          print major "." minor;
+        }' version.txt)
+      - echo $NEXT_VERSION > version.txt
+      - git config --global user.name "$GITHUB_USERNAME"
+      - git config --global user.email "wntpqhd1326@gmail.com"
+      - |
+        echo "--- GIT STATUS ---"
+        git status
+        echo "--- GIT DIFF ---"
+        git diff version.txt || true
+        echo "--- COMMIT STEP ---"
+        if [ -n "$(git status --porcelain)" ]; then
+          git add version.txt
+          git commit -m "Versioning $NEXT_VERSION"
+          git push origin HEAD:$BRANCH
+        else
+          echo "No changes to commit."
+        fi
+

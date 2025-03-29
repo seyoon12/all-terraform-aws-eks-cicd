@@ -1,0 +1,11 @@
+# acquired
+terraform import module.eks_self_managed_node_group.kubernetes_service_account.aws_node kube-system/aws-node
+# optional
+terraform import module.iam_codebuild.aws_iam_role.codebuild_role codebuild-role
+terraform import module.iam_codepipeline.aws_iam_role.codepipeline_role codepipeline-role
+terraform import module.iam_eks_cluster.aws_iam_role.eks_cluster_role eks-cluster-role
+terraform import module.iam_eks_node.aws_iam_role.eks_node_role eks-node-role
+terraform import module.keypair.aws_key_pair.k8s k8s
+terraform import module.codebuild.aws_codebuild_project.docker_build docker-build-project
+terraform import module.iam_eks_node.aws_iam_instance_profile.eks_node_profile eks-node-instance-profile
+ 
