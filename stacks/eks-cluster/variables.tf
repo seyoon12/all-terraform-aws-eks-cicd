@@ -1,13 +1,4 @@
-variable "cluster_name" {
-  type = string
-  default = "kubernetes"
-}
-
-variable "kubernetes_version" {
+variable "aws_region" {
   type    = string
-  default = "1.29"
-}
-
-variable "subnet_ids" {
-  type = list(string)
+  default = "ap-northeast-2"
 }
