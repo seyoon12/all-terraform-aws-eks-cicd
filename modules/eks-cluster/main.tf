@@ -5,7 +5,7 @@ resource "aws_eks_cluster" "kubernetes" {
 
   vpc_config {
     subnet_ids              = var.subnet_ids
-    security_group_ids      = var.cluster_security_group_ids # 여기에 SG ID 리스트
+    security_group_ids      = var.security_group_ids
     endpoint_public_access  = true
     endpoint_private_access = true
   }
