@@ -4,8 +4,6 @@
 
 ![전체 구성 다이어그램](https://github.com/user-attachments/assets/83bcab22-3022-4b04-a260-fead906c70e9)
 
-이 다이어그램은 Terraform과 Ansible을 사용하여 EKS 클러스터와 CI/CD 환경을 구성하는 전체 흐름을 나타낸다.
-
 ## 구성 요소 설명
 
 ### Terraform으로 생성되는 리소스
@@ -36,7 +34,7 @@
 6. **ArgoCD**: ArgoCD가 Kubernetes 클러스터에서 배포 작업을 자동으로 관리합니다.
 
 ### CI/CD 프로세스 다이어그램
-![CI/CD/ 프로세스 다이어그램](https://github.com/user-attachments/assets/d0cabeef-0e99-4927-835e-fdded0f364a4)
-**1. GitHub에 코드 푸시 → CodePipeline 트리거**
-**2. CodeBuild에서 빌드 수행 및 아티팩트 S3 업로드**
-**3. EKS 클러스터 및 Self-managed Node에 배포 진행**
+![CI/CD/ 프로세스 다이어그램](https://github.com/user-attachments/assets/d0cabeef-0e99-4927-835e-fdded0f364a4)  
+**1. GitHub에 코드 푸시 → CodePipeline 트리거**  
+**2. CodeBuild에서 빌드 수행 및 아티팩트 S3 업로드**  
+**3. EKS 클러스터 및 Self-managed Node에 배포 진행**  
