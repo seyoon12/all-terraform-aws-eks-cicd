@@ -38,3 +38,6 @@
 **1. GitHub에 코드 푸시 → CodePipeline 트리거**  
 **2. CodeBuild에서 빌드 수행 및 아티팩트 S3 업로드**  
 **3. EKS 클러스터 및 Self-managed Node에 배포 진행**  
+
+### 순서
+`terraform apply`
