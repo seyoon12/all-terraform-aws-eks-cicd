@@ -40,7 +40,9 @@
 **3. EKS 클러스터 및 Self-managed Node에 배포 진행**  
   
 ### 순서
-`stacks/codepipeline/terraform apply`  
-`stacks/eks-cluster/terraform apply`  
-`stacks/eks-selfmanaged-node/terraform apply`
+1. TF_VAR_github_oauth_token="YOUR_GITHUB_TOKEN"
+2. `stacks/codepipeline/terraform apply`  
+3. `stacks/eks-cluster/terraform apply`  
+4. `stacks/eks-selfmanaged-node/terraform apply`  
+5. `ansible-playbook ansible-playbook`
 
