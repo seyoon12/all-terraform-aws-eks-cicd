@@ -39,8 +39,8 @@
 **2. CodeBuild에서 빌드 수행 및 아티팩트 S3 업로드**  
 **3. EKS 클러스터 및 Self-managed Node에 배포 진행**  
   
-### 순서
-1. TF_VAR_github_oauth_token="YOUR_GITHUB_TOKEN"
+### 실행 순서
+1. `TF_VAR_github_oauth_token="YOUR_GITHUB_TOKEN"`
 2. `stacks/codepipeline/terraform apply`  
 3. `stacks/eks-cluster/terraform apply`  
 4. `stacks/eks-selfmanaged-node/terraform apply`  
